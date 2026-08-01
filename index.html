@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scatta una Foto e Invia a Telegram</title>
+  <style>
+    video, canvas {
+      display: block;
+      margin: 20px auto;
+    }
+    body {
+        font-family: sans-serif;
+        text-align: center;
+        background-color: #f4f4f9;
+        padding: 20px;
+    }
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #0088cc;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #005580;
+    }
+  </style>
+</head>
+<body>
+  <h1>Scatta una Foto (PoC)</h1>
+  <p>Questo è un esempio dimostrativo a scopo educativo.</p>
+  
+  <video id="video" width="320" height="240" autoplay></video>
+  <button id="snap">Invia Foto</button>
+  <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+
+  <script>
+    const video = document.getElementById('video');
+
+    // Richiede l'accesso alla fotocamera
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((stream) => {
+        video.srcObject = stream;
+      })
+      .catch((err) => {
+        console.error("Errore nell'accesso alla fotocamera: ", err);
+        alert("Impossibile accedere alla fotocamera. Verifica i permessi.");
+      });
+
+    const canvas = document.getElementById('canvas');
+    const snapButton = document.getElementById('snap');
+
+    snapButton.addEventListener('click', () => {
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, 320, 240);
+      
+      // Converte l'immagine catturata in formato Base64
+      const dataURL = canvas.toDataURL('image/png');
+
+      // Invia la stringa Base64 al backend Flask
+      fetch('/upload-photo', { // Usa un path relativo se ospitato sullo stesso server, o l'URL completo
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image: dataURL })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if(data.success) {
+            alert("PoC: Immagine inviata con successo!");
+        } else {
+            alert("PoC: Errore dal server.");
+        }
+      })
+      .catch(error => {
+        console.error("Errore di rete: ", error);
+      });
+    });
+  </script>
+</body>
+</html>
